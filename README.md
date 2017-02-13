@@ -1,0 +1,2 @@
+# pyrtf
+Python RTF Parser
