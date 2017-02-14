@@ -65,10 +65,10 @@ class RTFFile:
                 entity['content'] = content[index]
                 entity['level'] = group_level
                 index += 1
-                if content[index] == ' ':
+                if index < end_index and content[index] == ' ':
                     entity['content'] += content[index]
                     index += 1
-                elif content[index:index+2] == '\x0d\x0a':
+                elif index+1 < end_index and content[index:index+2] == '\x0d\x0a':
                     entity['content'] += content[index:index+2]
                     index += 2
                 self.entities.append(entity)
@@ -76,7 +76,7 @@ class RTFFile:
                 group_level -= 1
                 continue
 
-            if group_level == -1 and index + 1 < end_index:
+            if group_level == -1 and index < end_index:
                 entity['type'] = 'AppendData'
                 entity['content'] = content[index:]
                 self.entities.append(entity)
@@ -87,10 +87,10 @@ class RTFFile:
             entity['type'] = 'Data'
             entity['content'] = ''
             
-            while True:
+            while index+i < end_index:
                 if content[index+i] == '\\':
                     if content[index+i+1] in ['{', '}', '\\']:
-                        entity['content'] += content[index+i+1:index+i+2]
+                        entity['content'] += content[index+i+1]
                         i += 2
                     elif content[index+i+1] == '\'':
                         entity['content'] += content[index+i+2:index+i+4].decode('hex')
@@ -100,9 +100,10 @@ class RTFFile:
                 elif content[index+i] in ['{', '}']:
                     break
                 else:
-                    entity['content'] += content[index+i:index+i+1]
+                    entity['content'] += content[index+i]
                     i += 1
             
+            self.entities.append(entity)
             self.__print_entity(index, entity)
             index += i
 
@@ -175,5 +176,5 @@ if __name__ == '__main__':
         for entity in rtffile.entities:
             print entity
     else:
-        print 'Usage: ' + os.path.basename(sys.argv[0]) + ' RTF_File'
+        print 'Usage: ' + os.path.basename(sys.argv[0]) + ' file.rtf'
         
