@@ -63,7 +63,7 @@ class RTFFile:
                 index += 1
                 continue 
 
-            if content[index] == '}':
+            if content[index] == '}' and is_objdata == False:
                 entity['type'] = 'GroupEnd'
                 entity['content'] = content[index]
                 entity['level'] = group_level
@@ -75,13 +75,13 @@ class RTFFile:
                 self.entities.append(entity)
                 self.__print_entity(index, entity)
                 group_level -= 1
-                continue
-
-            if group_level == -1 and index < end_index:
-                entity['type'] = 'AppendData'
-                entity['content'] = content[index:]
-                self.entities.append(entity)
-                self.__print_entity(index, entity)
+                if group_level >= 0:
+                    continue
+                elif index < end_index:
+                    entity['type'] = 'AppendData'
+                    entity['content'] = content[index:]
+                    self.entities.append(entity)
+                    self.__print_entity(index, entity)
                 break
 
             i = 0
@@ -89,11 +89,27 @@ class RTFFile:
             entity['content'] = ''
 
             if is_objdata:
+                objdata_level_marker = 0
                 while index+i < end_index:
                     if content[index+i] in '0123456789abcdefABCDEF':
                         entity['content'] += content[index+i]
+                        i += 1
+                        continue
+                    elif content[index+i] == '\\':
+                        control_type, control_name, control_parameter, control_length = self.__analyze_control(content[index+i:])
+                        i += control_length
+                        continue
+                    elif content[index+i] == '{':
+                        objdata_level_marker += 1
+                        i += 1
+                        continue
                     elif content[index+i] == '}':
-                        break
+                        objdata_level_marker -= 1
+                        if objdata_level_marker < 0:
+                            break
+                        i += 1
+                        continue
+
                     i += 1
                         
                 is_objdata = False
@@ -131,7 +147,7 @@ class RTFFile:
             control_type = 'ControlWord'
             control_name += control[1]
             i = 2
-            while True:
+            while i <= 32:
                 if control[i] in string.ascii_letters:
                     control_name += control[i]
                     i += 1
@@ -142,7 +158,7 @@ class RTFFile:
                 control_parameter = '-'
                 i += 1
 
-            while True:
+            while i <= 32:
                 if control[i] in string.digits:
                     control_parameter += control[i]
                     i += 1
