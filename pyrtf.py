@@ -142,11 +142,12 @@ class RTFFile:
         control_name = ''
         control_parameter = ''
         control_length = 1
+        i = 1
         
-        if control[1] in string.ascii_letters:
+        if control[i] in string.ascii_letters:
             control_type = 'ControlWord'
             control_name += control[1]
-            i = 2
+            i += 1
             while i <= 32:
                 if control[i] in string.ascii_letters:
                     control_name += control[i]
